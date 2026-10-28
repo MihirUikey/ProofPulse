@@ -5,9 +5,10 @@ function ChallengeCard({ challenge, onDelete, onEdit, onViewDetails }) {
 
   const isOwner =
     isAuthenticated &&
-    user?.id &&
-    challenge.createdBy &&
-    String(user.id) === String(challenge.createdBy);
+    (user?.role === "admin" ||
+      (user?.id &&
+        challenge.createdBy &&
+        String(user.id) === String(challenge.createdBy)));
 
   return (
     <article className="challenge-card">

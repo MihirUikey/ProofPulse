@@ -1,13 +1,18 @@
 const express = require("express");
 const Challenge = require("../models/Challenge");
-const { protect } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middleware/authMiddleware");
+
 const router = express.Router();
 
-// CREATE a challenge
-router.post("/", protect, async (req, res) => {
+// CREATE a challenge — admin only
+router.post("/", protect, adminOnly, async (req, res) => {
   try {
     const challenge = await Challenge.create({
-      ...req.body,
+      title: req.body.title,
+      description: req.body.description,
+      category: req.body.category,
+      difficulty: req.body.difficulty,
+      evaluationCriteria: req.body.evaluationCriteria,
       createdBy: req.userId,
     });
 
@@ -24,27 +29,27 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
-// READ all challenges
+// READ all challenges — public
 router.get("/", async (req, res) => {
   try {
     const challenges = await Challenge.find().sort({
       createdAt: -1,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: challenges.length,
       data: challenges,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to fetch challenges",
+      message: "Failed to fetch challenges.",
     });
   }
 });
 
-// READ one challenge
+// READ one challenge — public
 router.get("/:id", async (req, res) => {
   try {
     const challenge = await Challenge.findById(req.params.id);
@@ -52,29 +57,34 @@ router.get("/:id", async (req, res) => {
     if (!challenge) {
       return res.status(404).json({
         success: false,
-        message: "Challenge not found",
+        message: "Challenge not found.",
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: challenge,
     });
   } catch (error) {
-    res.status(400).json({
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid challenge ID.",
+      });
+    }
+
+    return res.status(500).json({
       success: false,
-      message: "Invalid challenge ID",
+      message: "Failed to fetch challenge.",
     });
   }
 });
-// UPDATE a challenge
-router.put("/:id", protect, async (req, res) => {
+
+// UPDATE a challenge — admin only
+router.put("/:id", protect, adminOnly, async (req, res) => {
   try {
-    const challenge = await Challenge.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        createdBy: req.userId,
-      },
+    const challenge = await Challenge.findByIdAndUpdate(
+      req.params.id,
       {
         $set: {
           title: req.body.title,
@@ -91,15 +101,9 @@ router.put("/:id", protect, async (req, res) => {
     );
 
     if (!challenge) {
-      const exists = await Challenge.exists({
-        _id: req.params.id,
-      });
-
-      return res.status(exists ? 403 : 404).json({
+      return res.status(404).json({
         success: false,
-        message: exists
-          ? "You are not allowed to edit this challenge."
-          : "Challenge not found.",
+        message: "Challenge not found.",
       });
     }
 
@@ -123,24 +127,15 @@ router.put("/:id", protect, async (req, res) => {
   }
 });
 
-// DELETE a challenge — owner only
-router.delete("/:id", protect, async (req, res) => {
+// DELETE a challenge — admin only
+router.delete("/:id", protect, adminOnly, async (req, res) => {
   try {
-    const challenge = await Challenge.findOneAndDelete({
-      _id: req.params.id,
-      createdBy: req.userId,
-    });
+    const challenge = await Challenge.findByIdAndDelete(req.params.id);
 
     if (!challenge) {
-      const exists = await Challenge.exists({
-        _id: req.params.id,
-      });
-
-      return res.status(exists ? 403 : 404).json({
+      return res.status(404).json({
         success: false,
-        message: exists
-          ? "You are not allowed to delete this challenge."
-          : "Challenge not found.",
+        message: "Challenge not found.",
       });
     }
 
@@ -162,4 +157,5 @@ router.delete("/:id", protect, async (req, res) => {
     });
   }
 });
+
 module.exports = router;

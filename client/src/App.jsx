@@ -5,6 +5,13 @@ import ChallengeDetails from "./components/ChallengeDetails";
 import MySubmissions from "./components/MySubmissions";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import Sidebar from "./components/Sidebar";
+import DeveloperProfile from "./components/DeveloperProfile";
+import PublicDeveloperProfile from "./components/PublicDeveloperProfile";
+import Overview from "./components/Overview";
+import RequestChallenge from "./components/RequestChallenge";
+import AdminRequests from "./components/AdminRequests";
+import AdminSubmissions from "./components/AdminSubmissions";
 import api from "./api/api";
 import { useAuth } from "./context/AuthContext";
 import "./App.css";
@@ -19,9 +26,31 @@ const initialForm = {
   evaluationCriteria: "",
 };
 
+const authenticatedViews = [
+  "overview",
+  "activity",
+  "request-challenge",
+  "submissions",
+  "feedback",
+  "profile",
+  "skills",
+  "admin-challenges",
+  "admin-requests",
+  "admin-submissions",
+];
+
+const adminViews = [
+  "admin-challenges",
+  "admin-requests",
+  "admin-submissions",
+];
+
 function App() {
   const { user, isAuthenticated, authLoading, logout } = useAuth();
 
+  const [publicProfileId, setPublicProfileId] = useState(
+    () => new URLSearchParams(window.location.search).get("profile"),
+  );
   const [authView, setAuthView] = useState(null);
   const [activeView, setActiveView] = useState("challenges");
   const [challenges, setChallenges] = useState([]);
@@ -34,29 +63,64 @@ function App() {
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const formRef = useRef(null);
+  const requiresAuthentication = authenticatedViews.includes(activeView);
+  const requiresAdmin = adminViews.includes(activeView);
 
-  // Fetch challenges from the backend
-  async function fetchChallenges() {
-    try {
-      setError("");
-
-      const response = await api.get(API_URL);
-
-      setChallenges(response.data.data);
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Unable to load challenges. Check whether the backend is running.",
+  useEffect(() => {
+    function syncPublicProfile() {
+      setPublicProfileId(
+        new URLSearchParams(window.location.search).get("profile"),
       );
-    } finally {
-      setLoading(false);
     }
+
+    window.addEventListener("popstate", syncPublicProfile);
+    return () => window.removeEventListener("popstate", syncPublicProfile);
+  }, []);
+
+  function closePublicProfile() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("profile");
+    window.history.replaceState(
+      {},
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+    setPublicProfileId(null);
   }
 
   // Load challenges when the component mounts
   useEffect(() => {
-    fetchChallenges();
+    let cancelled = false;
+
+    async function loadChallenges() {
+      try {
+        const response = await api.get(API_URL);
+
+        if (!cancelled) {
+          setError("");
+          setChallenges(response.data.data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err.response?.data?.message ||
+              "Unable to load challenges. Check whether the backend is running.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadChallenges();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Handle form input changes
@@ -222,7 +286,23 @@ function App() {
   });
 
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell ${
+        sidebarCollapsed ? "app-shell-sidebar-collapsed" : ""
+      }`}
+    >
+      <Sidebar
+        activeView={activeView}
+        isAdmin={user?.role === "admin"}
+        isAuthenticated={isAuthenticated}
+        onCollapseChange={setSidebarCollapsed}
+        onNavigate={(view) => {
+          setActiveView(view);
+          setSelectedChallenge(null);
+          setMessage("");
+          setError("");
+        }}
+      />
       <header className="navbar">
         <a href="/" className="brand">
           <span className="brand-icon">P</span>
@@ -262,6 +342,8 @@ function App() {
                 className="auth-nav-button"
                 onClick={() => {
                   logout();
+                  setActiveView("challenges");
+                  setSelectedChallenge(null);
                   setAuthView(null);
                   setEditingId(null);
                   setForm(initialForm);
@@ -305,8 +387,115 @@ function App() {
       </header>
 
       <main className="main-container">
-        {activeView === "submissions" && isAuthenticated ? (
+        {publicProfileId ? (
+          <PublicDeveloperProfile
+            userId={publicProfileId}
+            onBack={closePublicProfile}
+          />
+        ) : authLoading && requiresAuthentication ? (
+          <section className="auth-card access-gate">
+            <span className="eyebrow">PROOFPULSE WORKSPACE</span>
+            <h2>Restoring your session...</h2>
+            <p className="auth-description">
+              Please wait while we check your account.
+            </p>
+          </section>
+        ) : !isAuthenticated && requiresAuthentication ? (
+          <section className="auth-card access-gate">
+            <span className="eyebrow">MEMBER WORKSPACE</span>
+            <h2>Log in to continue</h2>
+            <p className="auth-description">
+              This area is part of your ProofPulse workspace. Log in or create
+              an account to continue.
+            </p>
+            {authView === "login" ? (
+              <Login
+                onSwitchToRegister={() => setAuthView("register")}
+                onLoginSuccess={() => setAuthView(null)}
+              />
+            ) : authView === "register" ? (
+              <Register
+                onSwitchToLogin={() => setAuthView("login")}
+                onRegisterSuccess={() => setAuthView("login")}
+              />
+            ) : (
+              <div className="access-gate-actions">
+                <button
+                  type="button"
+                  className="auth-submit"
+                  onClick={() => setAuthView("login")}
+                >
+                  Log in
+                </button>
+                <button
+                  type="button"
+                  className="auth-nav-button"
+                  onClick={() => setAuthView("register")}
+                >
+                  Create account
+                </button>
+              </div>
+            )}
+          </section>
+        ) : requiresAdmin && user?.role !== "admin" ? (
+          <section className="sidebar-placeholder access-gate">
+            <span className="eyebrow">ADMINISTRATION</span>
+            <h1>Administrator access required</h1>
+            <p>
+              This page is only available to ProofPulse administrators.
+            </p>
+            <button
+              type="button"
+              className="auth-submit"
+              onClick={() => setActiveView("challenges")}
+            >
+              Explore Challenges
+            </button>
+          </section>
+        ) : activeView === "request-challenge" && user?.role === "admin" ? (
+          <section className="sidebar-placeholder access-gate">
+            <span className="eyebrow">CHALLENGE REQUESTS</span>
+            <h1>Developer access required</h1>
+            <p>
+              Challenge suggestions are available to developer accounts.
+              Administrators can manage and review requests from Administration.
+            </p>
+            <button
+              type="button"
+              className="auth-submit"
+              onClick={() => setActiveView("admin-requests")}
+            >
+              Review Challenge Requests
+            </button>
+          </section>
+        ) : activeView === "overview" ? (
+          <Overview user={user} onNavigate={setActiveView} />
+        ) : activeView === "activity" ? (
+          <section className="sidebar-placeholder">
+            <span className="eyebrow">PROOFPULSE WORKSPACE</span>
+            <h1>Activity &amp; Streaks</h1>
+            <p>
+              Your activity calendar, daily streaks, and consistency tracking
+              will appear here.
+            </p>
+          </section>
+        ) : activeView === "admin-requests" &&
+          isAuthenticated &&
+          user?.role === "admin" ? (
+          <AdminRequests />
+        ) : activeView === "admin-submissions" &&
+          isAuthenticated &&
+          user?.role === "admin" ? (
+          <AdminSubmissions />
+        ) : ["profile", "skills"].includes(activeView) && isAuthenticated ? (
+          <DeveloperProfile />
+        ) : ["submissions", "feedback"].includes(activeView) &&
+          isAuthenticated ? (
           <MySubmissions onBack={() => setActiveView("challenges")} />
+        ) : activeView === "request-challenge" &&
+          isAuthenticated &&
+          user?.role !== "admin" ? (
+          <RequestChallenge />
         ) : selectedChallenge ? (
           <ChallengeDetails
             challenge={selectedChallenge}
@@ -390,9 +579,21 @@ function App() {
               <div className="challenge-section" id="challenges">
                 <div className="section-heading">
                   <div>
-                    <span className="eyebrow">LEVEL UP</span>
-                    <h2>Explore challenges</h2>
-                    <p>Choose a challenge and put your skills to the test.</p>
+                    <span className="eyebrow">
+                      {activeView === "admin-challenges"
+                        ? "ADMINISTRATION"
+                        : "LEVEL UP"}
+                    </span>
+                    <h2>
+                      {activeView === "admin-challenges"
+                        ? "Manage challenges"
+                        : "Explore challenges"}
+                    </h2>
+                    <p>
+                      {activeView === "admin-challenges"
+                        ? "Create, update, and remove community challenges."
+                        : "Choose a challenge and put your skills to the test."}
+                    </p>
                   </div>
                   <span className="result-count">
                     {filteredChallenges.length} results
@@ -453,7 +654,7 @@ function App() {
                   <section className="auth-card">
                     <h2>Restoring your session...</h2>
                   </section>
-                ) : isAuthenticated ? (
+                ) : isAuthenticated && user?.role === "admin" ? (
                   <ChallengeForm
                     form={form}
                     editingId={editingId}
@@ -464,9 +665,9 @@ function App() {
                     onChange={handleChange}
                     onSubmit={handleSubmit}
                   />
-                ) : authView === "register" ? (
+                ) : !isAuthenticated && authView === "register" ? (
                   <Register onSwitchToLogin={() => setAuthView("login")} />
-                ) : authView === "login" ? (
+                ) : !isAuthenticated && authView === "login" ? (
                   <Login
                     onSwitchToRegister={() => setAuthView("register")}
                     onLoginSuccess={() => {
@@ -474,7 +675,7 @@ function App() {
                       setMessage("Logged in successfully!");
                     }}
                   />
-                ) : (
+                ) : !isAuthenticated ? (
                   <section className="auth-card">
                     <span className="eyebrow">YOUR NEXT STEP</span>
                     <h2>Ready to prove your skills?</h2>
@@ -499,7 +700,7 @@ function App() {
                       Create an account
                     </button>
                   </section>
-                )}
+                ) : null}
               </div>
             </section>
 

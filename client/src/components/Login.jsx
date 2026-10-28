@@ -38,7 +38,7 @@ function Login({ onSwitchToRegister, onLoginSuccess }) {
 
       const { token, user } = response.data;
 
-      if (!token || !user) {
+      if (!token || !user?.id || !["user", "admin"].includes(user.role)) {
         throw new Error("The server returned an invalid login response.");
       }
 
@@ -63,7 +63,7 @@ function Login({ onSwitchToRegister, onLoginSuccess }) {
       <span className="eyebrow">WELCOME BACK</span>
       <h2>Log in to ProofPulse</h2>
       <p className="auth-description">
-        Sign in to create and manage your coding challenges.
+        Sign in to submit projects, track your progress, and suggest challenges.
       </p>
 
       {error && (

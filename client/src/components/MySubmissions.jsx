@@ -60,7 +60,9 @@ function MySubmissions({ onBack }) {
           <p>Track the projects you have submitted.</p>
         </div>
 
-        <span className="result-count">{submissions.length} submissions</span>
+        <span className="result-count">
+          {submissions.length} submission{submissions.length !== 1 ? "s" : ""}
+        </span>
       </div>
 
       {submissions.length === 0 ? (
@@ -113,6 +115,16 @@ function MySubmissions({ onBack }) {
                 <div className="submission-feedback">
                   <h4>Feedback</h4>
                   <p>{submission.feedback}</p>
+                  {submission.reviewedAt && (
+                    <small>
+                      Reviewed
+                      {submission.reviewedBy?.name
+                        ? ` by ${submission.reviewedBy.name}`
+                        : ""}
+                      {" on "}
+                      {new Date(submission.reviewedAt).toLocaleDateString()}
+                    </small>
+                  )}
                 </div>
               )}
             </article>

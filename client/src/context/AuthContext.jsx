@@ -8,6 +8,17 @@ export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    function clearSession() {
+      localStorage.removeItem("proofpulse_token");
+      setUser(null);
+    }
+
+    window.addEventListener("proofpulse:unauthorized", clearSession);
+    return () =>
+      window.removeEventListener("proofpulse:unauthorized", clearSession);
+  }, []);
+
+  useEffect(() => {
     async function restoreSession() {
       const token = localStorage.getItem("proofpulse_token");
 
@@ -19,13 +30,20 @@ export function AuthProvider({ children }) {
       try {
         const response = await api.get("/auth/me");
 
-        if (response.data.success) {
-          setUser({
-            id: response.data.userId,
-          });
+        if (
+          response.data.success &&
+          response.data.user?.id &&
+          ["user", "admin"].includes(response.data.user.role)
+        ) {
+          setUser(response.data.user);
+        } else {
+          localStorage.removeItem("proofpulse_token");
+          setUser(null);
         }
-      } catch {
-        localStorage.removeItem("proofpulse_token");
+      } catch (error) {
+        if ([401, 404].includes(error.response?.status)) {
+          localStorage.removeItem("proofpulse_token");
+        }
         setUser(null);
       } finally {
         setAuthLoading(false);

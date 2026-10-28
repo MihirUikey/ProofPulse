@@ -37,6 +37,13 @@ const challengeSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    sourceRequest: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ChallengeRequest",
+      unique: true,
+      sparse: true,
+      default: undefined,
+    },
   },
   {
     timestamps: true,

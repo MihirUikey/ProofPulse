@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 function protect(req, res, next) {
   try {
@@ -31,6 +32,13 @@ function protect(req, res, next) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    if (!decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authentication token.",
+      });
+    }
+
     req.userId = decoded.userId;
 
     next();
@@ -49,4 +57,33 @@ function protect(req, res, next) {
   }
 }
 
-module.exports = { protect };
+async function adminOnly(req, res, next) {
+  try {
+    const user = await User.findById(req.userId).select("role");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User account not found.",
+      });
+    }
+
+    if (user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required.",
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Admin authorization error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to verify admin permissions.",
+    });
+  }
+}
+
+module.exports = { protect, adminOnly };
