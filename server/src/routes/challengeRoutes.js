@@ -98,7 +98,7 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
         },
       },
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       },
     );
@@ -137,7 +137,7 @@ router.delete("/:id", protect, adminOnly, async (req, res) => {
     let challenge = await Challenge.findOneAndUpdate(
       { _id: req.params.id, archivedAt: null },
       { $set: { archivedAt } },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!challenge) {
