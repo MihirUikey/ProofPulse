@@ -32,6 +32,10 @@ const challengeSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    archivedAt: {
+      type: Date,
+      default: null,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

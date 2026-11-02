@@ -72,30 +72,53 @@ async function getChallengeRequests(req, res) {
       .populate("requestedBy", "name username email")
       .populate("reviewedBy", "name username email")
       .sort({ createdAt: -1 });
+    const publishedChallengeIds = requests
+      .map((request) => request.publishedChallenge)
+      .filter(Boolean);
     const challenges = await Challenge.find({
-      sourceRequest: { $in: requests.map((request) => request._id) },
-    }).select("_id sourceRequest");
+      $or: [
+        { sourceRequest: { $in: requests.map((request) => request._id) } },
+        { _id: { $in: publishedChallengeIds } },
+      ],
+    }).select("_id archivedAt sourceRequest");
+    const challengeById = new Map(
+      challenges.map((challenge) => [String(challenge._id), challenge]),
+    );
     const challengeByRequest = new Map(
-      challenges.map((challenge) => [
-        String(challenge.sourceRequest),
-        String(challenge._id),
-      ]),
+      challenges
+        .filter((challenge) => challenge.sourceRequest)
+        .map((challenge) => [
+          String(challenge.sourceRequest),
+          challenge,
+        ]),
     );
 
     return res.status(200).json({
       success: true,
       count: requests.length,
-      data: requests.map((request) => ({
-        ...request.toObject(),
-        challengeId:
-          challengeByRequest.get(String(request._id)) ||
-          (request.publishedChallenge
-            ? String(request.publishedChallenge)
-            : null),
-        challengePublished:
-          challengeByRequest.has(String(request._id)) ||
-          Boolean(request.publishedChallenge),
-      })),
+      data: requests.map((request) => {
+        const requestId = String(request._id);
+        const linkedChallenge =
+          (request.publishedChallenge &&
+            challengeById.get(String(request.publishedChallenge))) ||
+          challengeByRequest.get(requestId) ||
+          null;
+        const challengeStatus = linkedChallenge
+          ? linkedChallenge.archivedAt instanceof Date &&
+            !Number.isNaN(linkedChallenge.archivedAt.getTime())
+            ? "archived"
+            : "active"
+          : request.publishedChallenge
+            ? "missing"
+            : null;
+
+        return {
+          ...request.toObject(),
+          challengeId: linkedChallenge ? String(linkedChallenge._id) : null,
+          challengePublished: Boolean(linkedChallenge),
+          challengeStatus,
+        };
+      }),
     });
   } catch (error) {
     console.error("Get challenge requests error:", error.message);

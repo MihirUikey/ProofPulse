@@ -29,6 +29,8 @@ describe("public developer profiles", () => {
       repositoryUrl: "https://github.com/proofpulse/not-public",
       status: "Rejected",
     });
+    challenge.archivedAt = new Date("2025-01-03T03:04:05.000Z");
+    await challenge.save();
 
     const response = await request(app).get(
       `/api/profiles/${developer._id}`,

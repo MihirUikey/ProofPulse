@@ -32,7 +32,7 @@ router.post("/", protect, adminOnly, async (req, res) => {
 // READ all challenges — public
 router.get("/", async (req, res) => {
   try {
-    const challenges = await Challenge.find().sort({
+    const challenges = await Challenge.find({ archivedAt: null }).sort({
       createdAt: -1,
     });
 
@@ -52,7 +52,10 @@ router.get("/", async (req, res) => {
 // READ one challenge — public
 router.get("/:id", async (req, res) => {
   try {
-    const challenge = await Challenge.findById(req.params.id);
+    const challenge = await Challenge.findOne({
+      _id: req.params.id,
+      archivedAt: null,
+    });
 
     if (!challenge) {
       return res.status(404).json({
@@ -83,8 +86,8 @@ router.get("/:id", async (req, res) => {
 // UPDATE a challenge — admin only
 router.put("/:id", protect, adminOnly, async (req, res) => {
   try {
-    const challenge = await Challenge.findByIdAndUpdate(
-      req.params.id,
+    const challenge = await Challenge.findOneAndUpdate(
+      { _id: req.params.id, archivedAt: null },
       {
         $set: {
           title: req.body.title,
@@ -127,21 +130,31 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
   }
 });
 
-// DELETE a challenge — admin only
+// Archive a challenge — admin only
 router.delete("/:id", protect, adminOnly, async (req, res) => {
   try {
-    const challenge = await Challenge.findByIdAndDelete(req.params.id);
+    const archivedAt = new Date();
+    let challenge = await Challenge.findOneAndUpdate(
+      { _id: req.params.id, archivedAt: null },
+      { $set: { archivedAt } },
+      { new: true },
+    );
 
     if (!challenge) {
-      return res.status(404).json({
-        success: false,
-        message: "Challenge not found.",
-      });
+      challenge = await Challenge.findById(req.params.id);
+
+      if (!challenge) {
+        return res.status(404).json({
+          success: false,
+          message: "Challenge not found.",
+        });
+      }
     }
 
     return res.status(200).json({
       success: true,
-      message: "Challenge deleted successfully.",
+      message: "Challenge archived successfully.",
+      data: challenge,
     });
   } catch (error) {
     if (error.name === "CastError") {
@@ -153,7 +166,7 @@ router.delete("/:id", protect, adminOnly, async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to delete challenge.",
+      message: "Failed to archive challenge.",
     });
   }
 });
