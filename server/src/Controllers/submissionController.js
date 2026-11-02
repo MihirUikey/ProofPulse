@@ -72,6 +72,13 @@ async function createSubmission(req, res) {
       });
     }
 
+    if (challenge.archivedAt instanceof Date && !Number.isNaN(challenge.archivedAt.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "This challenge is archived and no longer accepts submissions.",
+      });
+    }
+
     const submission = await Submission.create({
       user: req.userId,
       challenge: challengeId,

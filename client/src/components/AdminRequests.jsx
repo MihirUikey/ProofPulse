@@ -199,9 +199,19 @@ function AdminRequests() {
                   </p>
                 )}
 
-                {request.challengePublished && (
+                {request.challengeStatus === "active" && (
                   <p className="admin-request-published" role="status">
                     Published as a challenge.
+                  </p>
+                )}
+                {request.challengeStatus === "archived" && (
+                  <p className="admin-request-published" role="status">
+                    Published challenge is archived.
+                  </p>
+                )}
+                {request.challengeStatus === "missing" && (
+                  <p className="admin-request-published" role="status">
+                    Published challenge document is missing.
                   </p>
                 )}
 

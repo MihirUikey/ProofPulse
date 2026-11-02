@@ -218,10 +218,10 @@ function App() {
     }
   }
 
-  // Delete a challenge
-  async function handleDelete(id) {
+  // Archive a challenge
+  async function handleArchive(id) {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this challenge?",
+      "Are you sure you want to archive this challenge? Existing submissions and request history will be preserved.",
     );
 
     if (!confirmed) return;
@@ -236,9 +236,9 @@ function App() {
         previous.filter((challenge) => challenge._id !== id),
       );
 
-      setMessage("Challenge deleted successfully.");
+      setMessage("Challenge archived successfully.");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete challenge.");
+      setError(err.response?.data?.message || "Failed to archive challenge.");
     }
   }
 
@@ -591,7 +591,7 @@ function App() {
                     </h2>
                     <p>
                       {activeView === "admin-challenges"
-                        ? "Create, update, and remove community challenges."
+                        ? "Create, update, and archive community challenges."
                         : "Choose a challenge and put your skills to the test."}
                     </p>
                   </div>
@@ -631,7 +631,7 @@ function App() {
                       <ChallengeCard
                         key={challenge._id}
                         challenge={challenge}
-                        onDelete={handleDelete}
+                        onArchive={handleArchive}
                         onEdit={handleEdit}
                         onViewDetails={handleOpenChallenge}
                       />

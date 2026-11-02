@@ -1,6 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 
-function ChallengeCard({ challenge, onDelete, onEdit, onViewDetails }) {
+function ChallengeCard({ challenge, onArchive, onEdit, onViewDetails }) {
   const { user, isAuthenticated } = useAuth();
 
   const isOwner =
@@ -54,9 +54,9 @@ function ChallengeCard({ challenge, onDelete, onEdit, onViewDetails }) {
 
               <button
                 className="delete-button"
-                onClick={() => onDelete(challenge._id)}
+                onClick={() => onArchive(challenge._id)}
               >
-                Delete
+                Archive
               </button>
             </>
           ) : (
