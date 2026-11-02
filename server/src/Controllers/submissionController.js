@@ -12,7 +12,7 @@ const reviewStatuses = [
 // Create a submission
 async function createSubmission(req, res) {
   try {
-    const { challengeId, repositoryUrl, description } = req.body;
+    const { challengeId, repositoryUrl, description } = req.body || {};
 
     if (!challengeId || !repositoryUrl || !description) {
       return res.status(400).json({
@@ -161,7 +161,7 @@ async function getSubmissionsForReview(req, res) {
 
 async function reviewSubmission(req, res) {
   try {
-    const { status, feedback } = req.body;
+    const { status, feedback } = req.body || {};
 
     if (!reviewStatuses.includes(status)) {
       return res.status(400).json({
