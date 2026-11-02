@@ -4,7 +4,7 @@ const Challenge = require("../models/Challenge");
 
 async function createChallengeRequest(req, res) {
   try {
-    const { title, description, category, difficulty, reason } = req.body;
+    const { title, description, category, difficulty, reason } = req.body || {};
 
     if (!title || !description || !category || !difficulty || !reason) {
       return res.status(400).json({
@@ -113,7 +113,7 @@ async function approveChallengeRequest(req, res) {
 
   try {
     const { id } = req.params;
-    const { reviewNote = "" } = req.body;
+    const { reviewNote = "" } = req.body || {};
 
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({
@@ -150,7 +150,7 @@ async function approveChallengeRequest(req, res) {
             publicationPending: true,
           },
         },
-        { new: true, runValidators: true },
+        { returnDocument: "after", runValidators: true },
       );
 
       if (!request) {
@@ -218,7 +218,7 @@ async function approveChallengeRequest(req, res) {
           publishedChallenge: challenge._id,
         },
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
     approvalRecorded = false;
 
@@ -250,7 +250,7 @@ async function approveChallengeRequest(req, res) {
 async function rejectChallengeRequest(req, res) {
   try {
     const { id } = req.params;
-    const { reviewNote = "" } = req.body;
+    const { reviewNote = "" } = req.body || {};
 
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({
@@ -280,7 +280,7 @@ async function rejectChallengeRequest(req, res) {
           reviewNote: reviewNote.trim(),
         },
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     )
       .populate("requestedBy", "name username email")
       .populate("reviewedBy", "name username email");
