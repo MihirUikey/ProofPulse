@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: proofpulse-api
+    env_file:
+      - ./server/.env
+    environment:
+      MONGODB_URI: mongodb://host.docker.internal:27017/proofpulse
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5001/api
+    container_name: proofpulse-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
