@@ -82,18 +82,6 @@ Generate a strong JWT secret for your environment. Never commit `.env` files or 
 
 For Docker Compose, MongoDB is accessed through the `mongodb` service name. For local development outside Docker, use the appropriate local MongoDB connection string.
 
-Create `server/.env` using the required variables from your backend configuration.
-
-At minimum, configure:
-
-```env
-PORT=5001
-MONGODB_URI=mongodb://mongodb:27017/proofpulse
-```
-
-Also configure the authentication secrets and other environment variables required by the application.
-
-Do not commit `.env` files or expose credentials.
 
 ### 3. Start the application
 
