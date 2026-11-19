@@ -15,7 +15,7 @@ RUN npm ci --omit=dev
 COPY . .
 
 # Document the port used by the application
-EXPOSE 5000
+EXPOSE 5001
 
 # Start the backend
 CMD ["npm", "start"]
