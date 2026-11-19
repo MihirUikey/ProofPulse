@@ -82,7 +82,6 @@ Generate a strong JWT secret for your environment. Never commit `.env` files or 
 
 For Docker Compose, MongoDB is accessed through the `mongodb` service name. For local development outside Docker, use the appropriate local MongoDB connection string.
 
-
 ### 3. Start the application
 
 ```bash
@@ -131,6 +130,27 @@ volumes:
 ```
 
 This ensures database records persist even when containers are stopped and recreated.
+
+### Back Up the Database
+
+Create a backup directory and export the database from the MongoDB container:
+
+```bash
+mkdir -p backups
+docker compose exec -T mongodb mongodump --db proofpulse --archive > backups/proofpulse-$(date +%Y%m%d-%H%M%S).archive
+```
+
+The `backups/` directory is excluded from Git.
+
+### Restore a Database Backup
+
+Replace `<backup-file>` with the name of the archive you want to restore:
+
+```bash
+docker compose exec -T mongodb mongorestore --drop --db proofpulse --archive < backups/<backup-file>.archive
+```
+
+**Warning:** `--drop` removes each target collection included in the backup before restoring it. Back up the current database first, and use this command only when you intentionally want to replace those collections with the backup contents.
 
 ## Backend Development
 
