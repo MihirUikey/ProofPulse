@@ -7,6 +7,11 @@ const challengeRequestRoutes = require("./src/routes/challengeRequestRoutes");
 const profileRoutes = require("./src/routes/profileRoutes");
 
 const app = express();
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
+
+if (Number.isInteger(trustProxyHops) && trustProxyHops > 0) {
+  app.set("trust proxy", trustProxyHops);
+}
 const allowedOrigins = (
   process.env.CORS_ORIGINS || "http://localhost:5173,http://localhost:8080"
 )
