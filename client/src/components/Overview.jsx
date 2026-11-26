@@ -40,6 +40,14 @@ function Overview({ user, onNavigate }) {
   const acceptedCount = submissions.filter(
     (submission) => submission.status === "Accepted",
   ).length;
+  const completedChallengeCount = new Set(
+    submissions
+      .filter(
+        (submission) =>
+          submission.status === "Accepted" && submission.challenge?._id,
+      )
+      .map((submission) => submission.challenge._id),
+  ).size;
 
   const inReviewCount = submissions.filter(
     (submission) =>
@@ -146,8 +154,8 @@ function Overview({ user, onNavigate }) {
               <Trophy size={20} />
             </div>
           </div>
-          <strong>—</strong>
-          <small>Challenge completion tracking comes next</small>
+          <strong>{loading ? "…" : completedChallengeCount}</strong>
+          <small>Distinct challenges with accepted work</small>
         </article>
       </div>
 
