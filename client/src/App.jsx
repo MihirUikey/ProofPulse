@@ -9,6 +9,7 @@ import Sidebar from "./components/Sidebar";
 import DeveloperProfile from "./components/DeveloperProfile";
 import PublicDeveloperProfile from "./components/PublicDeveloperProfile";
 import Overview from "./components/Overview";
+import ActivityFeed from "./components/ActivityFeed";
 import RequestChallenge from "./components/RequestChallenge";
 import AdminRequests from "./components/AdminRequests";
 import AdminSubmissions from "./components/AdminSubmissions";
@@ -471,14 +472,7 @@ function App() {
         ) : activeView === "overview" ? (
           <Overview user={user} onNavigate={setActiveView} />
         ) : activeView === "activity" ? (
-          <section className="sidebar-placeholder">
-            <span className="eyebrow">PROOFPULSE WORKSPACE</span>
-            <h1>Activity &amp; Streaks</h1>
-            <p>
-              Your activity calendar, daily streaks, and consistency tracking
-              will appear here.
-            </p>
-          </section>
+          <ActivityFeed user={user} onNavigate={setActiveView} />
         ) : activeView === "admin-requests" &&
           isAuthenticated &&
           user?.role === "admin" ? (
@@ -575,7 +569,13 @@ function App() {
               </div>
             </section>
 
-            <section className="workspace">
+            <section
+              className={`workspace ${
+                isAuthenticated && user?.role !== "admin"
+                  ? "workspace-member"
+                  : ""
+              }`}
+            >
               <div className="challenge-section" id="challenges">
                 <div className="section-heading">
                   <div>

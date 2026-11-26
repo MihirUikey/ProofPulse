@@ -695,6 +695,9 @@ button:disabled {
   gap: 35px;
   padding: 45px 0 65px;
 }
+.workspace-member {
+  grid-template-columns: minmax(0, 1fr);
+}
 .challenge-section,
 .challenge-list,
 .challenge-results {

@@ -29,7 +29,7 @@ const menuItems = [
     icon: LayoutDashboard,
     children: [
       { label: "Overview", id: "overview", icon: LayoutDashboard },
-      { label: "Activity & Streaks", id: "activity", icon: Activity },
+      { label: "Activity", id: "activity", icon: Activity },
     ],
   },
   {
